@@ -1,0 +1,4 @@
+.vagrant/
+vault_pass.txt
+private_keys/
+*.retry
