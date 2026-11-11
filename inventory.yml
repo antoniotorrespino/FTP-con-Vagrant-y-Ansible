@@ -1,0 +1,8 @@
+all:
+  hosts:
+    dns:
+      ansible_host: 192.168.57.5
+      ansible_ssh_private_key_file: ./private_keys/dns.key.rsa
+    negocio:
+      ansible_host: 192.168.57.7
+      ansible_ssh_private_key_file: ./private_keys/negocio.key.rsa
