@@ -24,7 +24,7 @@ chmod 600 ./private_keys/*
 # Copiar ficheros de ansible y playbooks
 # Descomentar las siguientes líneas según vayamos teniendo los ficheros y
 # hacer `vagrant provision ansible`
-#cp -vf /vagrant/ansible.cfg .
-#cp -vf /vagrant/inventory.yml .
-#cp -vf /vagrant/requirements.yml .
-#chown vagrant:vagrant ./ansible.cfg ./inventory.yml
+cp -vf /vagrant/ansible.cfg .
+cp -vf /vagrant/inventory.yml .
+cp -vf /vagrant/requirements.yml .
+chown vagrant:vagrant ./ansible.cfg ./inventory.yml
