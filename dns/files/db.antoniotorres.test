@@ -1,0 +1,14 @@
+$TTL 86400
+@   IN  SOA dns.antoniotorres.test. admin.antoniotorres.test. (
+            1          ; Serial (aumentar en cada cambio)
+            604800     ; Refresh
+            86400      ; Retry
+            2419200    ; Expire
+            86400 )    ; Negative Cache TTL
+
+@        IN  NS     dns.antoniotorres.test.
+
+dns      IN  A      192.168.57.5
+negocio  IN  A      192.168.57.7
+www      IN  CNAME  negocio
+ftp      IN  CNAME  negocio
