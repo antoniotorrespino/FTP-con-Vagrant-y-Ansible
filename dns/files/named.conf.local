@@ -1,0 +1,9 @@
+zone "antoniotorres.test" {
+    type master;
+    file "/var/lib/bind/db.antoniotorres.test";
+};
+
+zone "57.168.192.in-addr.arpa" {
+    type master;
+    file "/var/lib/bind/db.192.168.57";
+};
