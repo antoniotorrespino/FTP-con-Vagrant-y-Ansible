@@ -25,3 +25,9 @@ chown -R vagrant:vagrant ./dns
 
 cp -vrf /vagrant/web .
 chown -R vagrant:vagrant ./web
+
+cp -vrf /vagrant/ftp .
+chown -R vagrant:vagrant ./ftp
+
+cp -vf /vagrant/vault_pass.txt ./.vault_pass.txt
+chmod 600 ./.vault_pass.txt
