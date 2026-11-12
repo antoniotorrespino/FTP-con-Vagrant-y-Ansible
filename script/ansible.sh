@@ -3,6 +3,7 @@
 # Configura el servidor como un nodo de control de Ansible
 #
 set -xeu
+export DEBIAN_FRONTEND=noninteractive
 
 # Instalar ansible
 apt-get update
@@ -22,6 +23,8 @@ chown vagrant:vagrant ./private_keys/*
 chmod 600 ./private_keys/*
 
 # Copiar ficheros de ansible y playbooks
+cp -vrf /vagrant/dns .
+chown -R vagrant:vagrant ./dns
 # Descomentar las siguientes líneas según vayamos teniendo los ficheros y
 # hacer `vagrant provision ansible`
 cp -vf /vagrant/ansible.cfg .
