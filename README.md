@@ -1,96 +1,95 @@
 # FTP con Vagrant y Ansible
 
-**Autor:** Antonio Torres Pino
-**Repositorio:** https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible
+Práctica de 2º de DAW hecha por Antonio Torres Pino.
+Repositorio: https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible
 
-## Objetivo del proyecto
+## De qué va
 
-Desplegar de forma automatizada, con Vagrant y Ansible, una pequeña infraestructura de tres máquinas virtuales con un servidor DNS (BIND9), un servidor web (Apache) y un servidor FTP seguro (vsftpd con FTP explícito sobre TLS). Los usuarios `ana` y `juan` acceden por FTP: `ana` publica páginas web en `/var/www/html` y `juan` queda enjaulado en su directorio personal.
+En esta práctica he montado tres máquinas virtuales con Vagrant y las he configurado con Ansible. Una hace de servidor DNS, otra de servidor web y FTP, y la tercera es la que uso para lanzar Ansible contra las otras dos.
 
-## Máquinas virtuales
+El FTP va cifrado con TLS y tiene dos usuarios: `ana`, que puede subir páginas web a `/var/www/html`, y `juan`, que solo puede moverse por su directorio personal.
 
-| Máquina | Nombre | IP | Función |
-|---|---|---|---|
-| `dns` | dns.antoniotorres.test | 192.168.57.5 | Servidor DNS (BIND9) |
-| `ansible` | ansible.antoniotorres.test | 192.168.57.6 | Nodo de control de Ansible |
-| `negocio` | negocio.antoniotorres.test | 192.168.57.7 | Servidor web (Apache) y FTP seguro (vsftpd) |
+## Máquinas
 
-Los nombres `www.antoniotorres.test` y `ftp.antoniotorres.test` son alias (CNAME) de `negocio`.
+- `dns` (192.168.57.5): servidor DNS con BIND9.
+- `ansible` (192.168.57.6): desde aquí se ejecuta Ansible.
+- `negocio` (192.168.57.7): Apache y vsftpd.
 
-## Herramientas utilizadas
+Los nombres `www.antoniotorres.test` y `ftp.antoniotorres.test` apuntan a `negocio` con un CNAME.
 
-- GitHub (repositorio, issues y GitHub Projects)
-- Git
-- VirtualBox
-- Vagrant (imagen `debian/bookworm64`)
-- Ansible (con Ansible Vault y la colección `community.crypto`)
-- BIND9, Apache2 y vsftpd
+## Herramientas
 
-## Estructura del proyecto
+Git y GitHub (con Issues y Projects para organizar las tareas), VirtualBox, Vagrant con la imagen `debian/bookworm64`, Ansible con Vault y la colección `community.crypto`, y BIND9, Apache y vsftpd en las máquinas.
 
-```
-├── LICENSE
-├── README.md
-├── Vagrantfile
-├── ansible.cfg
-├── inventory.yml
-├── requirements.yml
-├── script/ansible.sh      # prepara el nodo de control de Ansible
-├── dns/                   # playbook, zonas de BIND y test.sh
-├── web/                   # playbook de Apache, index.html y test.sh
-├── ftp/                   # playbook, vsftpd.conf y vault cifrado
-└── capturas/              # capturas de las pruebas con FileZilla
-```
+## Cómo ponerlo en marcha
 
-## Requisitos
+Hacen falta Git, VirtualBox y Vagrant instalados.
 
-Git, VirtualBox y Vagrant instalados. Para las pruebas con cliente gráfico, FileZilla.
-
-## Puesta en marcha
-
-1. Clonar el repositorio y entrar en la carpeta:
+1. Clonar el repositorio:
 
    ```
    git clone https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible.git
    cd FTP-con-Vagrant-y-Ansible
    ```
 
-2. Crear en la raíz el archivo `vault_pass.txt` con la contraseña del vault (`daw` en esta práctica). No se sube al repositorio porque está en `.gitignore`.
+2. Crear un archivo `vault_pass.txt` en la raíz con la contraseña del vault (`daw`). No está en el repositorio porque lo ignora el `.gitignore`.
 
-3. Crear las máquinas virtuales:
+3. Levantar las máquinas:
 
    ```
    vagrant up
-   vagrant status
    ```
 
-   El provisionamiento del nodo `ansible` ejecuta los playbooks de DNS, web y FTP.
-
-4. Para usar los nombres desde Windows, ejecutar en PowerShell como administrador:
+4. Para que Windows resuelva los nombres, en PowerShell como administrador:
 
    ```
    Add-DnsClientNrptRule -Namespace ".antoniotorres.test" -NameServers "192.168.57.5"
    ```
 
-## Ejecución manual de los playbooks
+Si hay que lanzar los playbooks a mano, entro en la máquina `ansible` con `vagrant ssh ansible` y ejecuto:
 
 ```
-vagrant ssh ansible
 ansible-playbook dns/dns.yml
 ansible-playbook web/web.yml
 ansible-playbook ftp/ftp.yml --vault-password-file ./.vault_pass.txt
 ```
 
-## Pruebas
+## Cómo lo he probado
 
 - DNS: `vagrant ssh dns -c "bash /vagrant/dns/test.sh"`
-- Web: `vagrant ssh ansible -c "bash /vagrant/web/test.sh"` y `http://www.antoniotorres.test`
-- FTP con TLS: `curl -k --ssl-reqd --user ana:ana ftp://ftp.antoniotorres.test/`
+- Web: `vagrant ssh ansible -c "bash /vagrant/web/test.sh"` y abriendo `http://www.antoniotorres.test`
+- FTP: con `curl -k --ssl-reqd --user ana:ana ftp://ftp.antoniotorres.test/` y con FileZilla (las capturas están más abajo)
 
-Si el PC se suspende con las máquinas encendidas, el reloj de las VMs puede quedar desfasado y `apt` rechazar los repositorios. Se evita apagándolas con `vagrant halt` al terminar.
+Los usuarios son `ana` con contraseña `ana` y `juan` con contraseña `juan`. El acceso anónimo está desactivado y las conexiones sin TLS se rechazan. Las contraseñas están en `ftp/vars/vault.yml` como hashes, cifrado con Ansible Vault.
 
-## Usuarios FTP
+Un aviso: si el PC se suspende con las máquinas encendidas, el reloj de las VMs se descuadra y `apt` falla. Lo mejor es apagarlas con `vagrant halt`.
 
-| Usuario | Contraseña | Comportamiento |
-|---|---|---|
-| `ana` | `ana` | Sin jaula. Su raíz
+## Capturas
+
+Conexión de `ana` con FileZilla usando el nombre del servidor y FTP explícito sobre TLS:
+
+![Gestor de sitios](capturas/01-ana-gestor-sitios.jpeg)
+
+Certificado autofirmado que muestra al conectar:
+
+![Certificado](capturas/02-ana-certificado.jpeg)
+
+`ana` entra en `/var/www/html`:
+
+![ana conectada](capturas/03-ana-conectada-var-www-html.jpeg)
+
+Subida del `index.html` modificado:
+
+![Subida correcta](capturas/04-ana-subida-correcta.jpeg)
+
+La página web ya con el cambio:
+
+![Página modificada](capturas/05-ana-pagina-modificada.jpeg)
+
+`juan` no puede salir de su directorio (da error al intentar entrar en `/var/www/html`):
+
+![juan enjaulado](capturas/06-juan-enjaulado.jpeg)
+
+## Licencia
+
+MIT, el texto completo está en el archivo `LICENSE`.
