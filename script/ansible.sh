@@ -41,3 +41,9 @@ chown -R vagrant:vagrant ./ftp
 cp -vf /vagrant/vault_pass.txt ./.vault_pass.txt
 chown vagrant:vagrant ./.vault_pass.txt
 chmod 600 ./.vault_pass.txt
+
+
+# Provisionar con Ansible (como usuario vagrant)
+su - vagrant -c "ansible-playbook dns/dns.yml"
+su - vagrant -c "ansible-playbook web/web.yml"
+su - vagrant -c "ansible-playbook ftp/ftp.yml --vault-password-file ./.vault_pass.txt"
