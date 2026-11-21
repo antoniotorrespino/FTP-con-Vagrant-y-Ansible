@@ -1,42 +1,96 @@
-FTP con Vagrant y Ansible
+# FTP con Vagrant y Ansible
 
-Objetivo del proyecto
+**Autor:** Antonio Torres Pino
+**Repositorio:** https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible
 
+## Objetivo del proyecto
 
+Desplegar de forma automatizada, con Vagrant y Ansible, una pequeña infraestructura de tres máquinas virtuales con un servidor DNS (BIND9), un servidor web (Apache) y un servidor FTP seguro (vsftpd con FTP explícito sobre TLS). Los usuarios `ana` y `juan` acceden por FTP: `ana` publica páginas web en `/var/www/html` y `juan` queda enjaulado en su directorio personal.
 
-Desplegar de forma automatizada una infraestructura de tres máquinas virtuales
+## Máquinas virtuales
 
-con un servidor DNS (BIND9), un servidor web (Apache) y un servidor FTP seguro
+| Máquina | Nombre | IP | Función |
+|---|---|---|---|
+| `dns` | dns.antoniotorres.test | 192.168.57.5 | Servidor DNS (BIND9) |
+| `ansible` | ansible.antoniotorres.test | 192.168.57.6 | Nodo de control de Ansible |
+| `negocio` | negocio.antoniotorres.test | 192.168.57.7 | Servidor web (Apache) y FTP seguro (vsftpd) |
 
-(vsftpd con TLS) usando Vagrant y Ansible.
+Los nombres `www.antoniotorres.test` y `ftp.antoniotorres.test` son alias (CNAME) de `negocio`.
 
+## Herramientas utilizadas
 
+- GitHub (repositorio, issues y GitHub Projects)
+- Git
+- VirtualBox
+- Vagrant (imagen `debian/bookworm64`)
+- Ansible (con Ansible Vault y la colección `community.crypto`)
+- BIND9, Apache2 y vsftpd
 
-Herramientas utilizadas
+## Estructura del proyecto
 
-GitHub (repositorio y gestión del proyecto)
+```
+├── LICENSE
+├── README.md
+├── Vagrantfile
+├── ansible.cfg
+├── inventory.yml
+├── requirements.yml
+├── script/ansible.sh      # prepara el nodo de control de Ansible
+├── dns/                   # playbook, zonas de BIND y test.sh
+├── web/                   # playbook de Apache, index.html y test.sh
+├── ftp/                   # playbook, vsftpd.conf y vault cifrado
+└── capturas/              # capturas de las pruebas con FileZilla
+```
 
-Vagrant
+## Requisitos
 
-VirtualBox
+Git, VirtualBox y Vagrant instalados. Para las pruebas con cliente gráfico, FileZilla.
 
-Ansible
+## Puesta en marcha
 
-BIND9, Apache2 y vsftpd
+1. Clonar el repositorio y entrar en la carpeta:
 
-Instrucciones iniciales de uso
+   ```
+   git clone https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible.git
+   cd FTP-con-Vagrant-y-Ansible
+   ```
 
+2. Crear en la raíz el archivo `vault_pass.txt` con la contraseña del vault (`daw` en esta práctica). No se sube al repositorio porque está en `.gitignore`.
 
+3. Crear las máquinas virtuales:
 
-Requisitos: Git, VirtualBox y Vagrant instalados.
+   ```
+   vagrant up
+   vagrant status
+   ```
 
+   El provisionamiento del nodo `ansible` ejecuta los playbooks de DNS, web y FTP.
 
+4. Para usar los nombres desde Windows, ejecutar en PowerShell como administrador:
 
-Clonar el repositorio: git clone https://github.com/antoniotorrespino/FTP-con-Vagrant-y-Ansible.git
+   ```
+   Add-DnsClientNrptRule -Namespace ".antoniotorres.test" -NameServers "192.168.57.5"
+   ```
 
-Entrar en la carpeta del proyecto.
+## Ejecución manual de los playbooks
 
-Iniciar las máquinas: vagrant up
+```
+vagrant ssh ansible
+ansible-playbook dns/dns.yml
+ansible-playbook web/web.yml
+ansible-playbook ftp/ftp.yml --vault-password-file ./.vault_pass.txt
+```
 
-Comprobar su estado: vagrant status
+## Pruebas
 
+- DNS: `vagrant ssh dns -c "bash /vagrant/dns/test.sh"`
+- Web: `vagrant ssh ansible -c "bash /vagrant/web/test.sh"` y `http://www.antoniotorres.test`
+- FTP con TLS: `curl -k --ssl-reqd --user ana:ana ftp://ftp.antoniotorres.test/`
+
+Si el PC se suspende con las máquinas encendidas, el reloj de las VMs puede quedar desfasado y `apt` rechazar los repositorios. Se evita apagándolas con `vagrant halt` al terminar.
+
+## Usuarios FTP
+
+| Usuario | Contraseña | Comportamiento |
+|---|---|---|
+| `ana` | `ana` | Sin jaula. Su raíz
